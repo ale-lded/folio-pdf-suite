@@ -1009,7 +1009,7 @@
 
   .merge-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr) 360px;
     align-items: start;
     gap: 24px;
   }
@@ -1020,16 +1020,23 @@
 
   .upload-box {
     display: flex;
-    min-height: 150px;
+    min-height: 240px;
+    flex-direction: column;
     align-items: center;
-    gap: 16px;
-    padding: 22px;
-    border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
+    justify-content: center;
+    gap: 14px;
+    padding: 36px 24px;
+    border: 1.5px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
     border-radius: 22px;
     background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+    text-align: center;
     transition:
       background-color 160ms ease,
       border-color 160ms ease;
+  }
+
+  .upload-box:hover {
+    border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
   }
 
   .upload-box--active {
@@ -1039,28 +1046,34 @@
 
   .upload-box__icon {
     display: grid;
-    width: 48px;
-    height: 48px;
+    width: 60px;
+    height: 60px;
     flex: 0 0 auto;
     place-items: center;
-    border-radius: 15px;
+    border-radius: 18px;
     background: color-mix(in srgb, var(--accent) 14%, transparent);
     color: var(--accent);
   }
 
+  .upload-box__text {
+    display: grid;
+    gap: 4px;
+  }
+
   .upload-box strong {
-    font-size: 15px;
+    font-size: 17px;
   }
 
   .upload-box p {
-    margin: 5px 0 0;
+    margin: 0;
     color: var(--muted);
     font-size: 13px;
   }
 
   .upload-box > .button {
     flex: 0 0 auto;
-    margin-left: auto;
+    margin-top: 4px;
+    margin-left: 0;
   }
 
   .visually-hidden {
@@ -1291,6 +1304,68 @@
     height: 1px;
     margin: 20px 0;
     background: var(--border);
+  }
+
+  /* Un singolo file scelto (Split) mostrato sotto la dropzone. */
+  .file-row--standalone {
+    margin-top: 14px;
+  }
+
+  /* Campi del pannello opzioni: etichetta + controllo, chiaramente cliccabili. */
+  .field {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .field__label {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .field__select,
+  .field__input {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-raised);
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .field__select {
+    padding-right: 38px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    cursor: pointer;
+  }
+
+  .field__select:hover,
+  .field__input:hover {
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  }
+
+  .field__select:focus-visible,
+  .field__input:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+    outline: none;
+  }
+
+  .field__hint {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.5;
   }
 
   .toggle-row {

@@ -6,8 +6,12 @@ import { MergePage } from './pages/MergePage'
 import { ProgressPage } from './pages/ProgressPage'
 import { ResultPage } from './pages/ResultPage'
 import { SignPage } from './pages/SignPage'
+import { SplitPage } from './pages/SplitPage'
 import { ToolPlaceholder } from './pages/ToolPlaceholder'
 import { mergePdfs } from './lib/mergePdfs'
+import { splitPdf, type PageRange } from './lib/splitPdf'
+import { zipPdfs } from './lib/zipPdfs'
+import { formatFileSize } from './lib/pdfFiles'
 import type { Screen, ToolId } from './types'
 
 type Theme = 'dark' | 'light'
@@ -15,9 +19,18 @@ type Theme = 'dark' | 'light'
 export default function App() {
   const [theme, setTheme] = useState<Theme>('dark')
   const [screen, setScreen] = useState<Screen>('home')
+  // Quale strumento ha prodotto il risultato: decide cosa mostrano le schermate
+  // condivise "progress" e "result".
+  const [lastRun, setLastRun] = useState<'merge' | 'split'>('merge')
+
   const [files, setFiles] = useState<File[]>([])
   const [mergeError, setMergeError] = useState<string | null>(null)
   const [mergedPdf, setMergedPdf] = useState<Blob | null>(null)
+
+  const [splitFile, setSplitFile] = useState<File | null>(null)
+  const [splitError, setSplitError] = useState<string | null>(null)
+  const [splitZip, setSplitZip] = useState<Blob | null>(null)
+  const [splitPartCount, setSplitPartCount] = useState(0)
 
   // Screens share one scroll position, so a new one would open scrolled down.
   useEffect(() => {
@@ -27,6 +40,7 @@ export default function App() {
   const selectTool = (tool: ToolId) => setScreen(tool)
 
   async function startMerge(orderedFiles: File[]) {
+    setLastRun('merge')
     setMergeError(null)
     setMergedPdf(null)
     setScreen('progress')
@@ -49,6 +63,36 @@ export default function App() {
       setScreen('merge')
     }
   }
+
+  async function startSplit(file: File, ranges: PageRange[]) {
+    setLastRun('split')
+    setSplitError(null)
+    setSplitZip(null)
+    setScreen('progress')
+
+    try {
+      // splitPdf valida i range e ritorna un PDF per intervallo; zipPdfs li
+      // impacchetta in un unico archivio da scaricare.
+      const [parts] = await Promise.all([
+        splitPdf(file, ranges),
+        new Promise((resolve) => setTimeout(resolve, 800)),
+      ])
+
+      const zip = await zipPdfs(parts, file.name)
+      setSplitPartCount(parts.length)
+      setSplitZip(zip)
+      setScreen('result')
+    } catch (error) {
+      setSplitError(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while splitting your PDF.',
+      )
+      setScreen('split')
+    }
+  }
+
+  const splitStem = splitFile ? splitFile.name.replace(/\.pdf$/i, '') : 'split'
 
   return (
     <div className="app" data-theme={theme}>
@@ -82,27 +126,80 @@ export default function App() {
             onStart={startMerge}
             mergeError={mergeError}
           />
+        ) : screen === 'split' ? (
+          <SplitPage
+            file={splitFile}
+            onFileChange={(file) => {
+              setSplitFile(file)
+              setSplitError(null)
+            }}
+            onBack={() => {
+              setScreen('home')
+              setSplitError(null)
+            }}
+            onStart={startSplit}
+            splitError={splitError}
+          />
         ) : screen === 'compress' ? (
           <CompressPage onBack={() => setScreen('home')} />
         ) : screen === 'sign' ? (
           <SignPage onBack={() => setScreen('home')} />
         ) : screen === 'progress' ? (
-          <ProgressPage
-            fileCount={files.length}
-          />
+          lastRun === 'split' ? (
+            <ProgressPage
+              description="Dividing the pages on your device. Large files can take a while."
+              icon="split"
+              title="Splitting your PDF"
+            />
+          ) : (
+            <ProgressPage
+              description={`Combining ${files.length} ${
+                files.length === 1 ? 'file' : 'files'
+              } on your device. Large files can take a while.`}
+              icon="merge"
+              title="Merging your PDFs"
+            />
+          )
         ) : screen === 'result' ? (
-          <ResultPage
-            files={files}
-            mergedPdf={mergedPdf}
-            onHome={() => {
-              setMergedPdf(null)
-              setScreen('home')
-            }}
-            onRetry={() => {
-              setMergedPdf(null)
-              setScreen('merge')
-            }}
-          />
+          lastRun === 'split' ? (
+            <ResultPage
+              description={`${splitPartCount} ${
+                splitPartCount === 1 ? 'file' : 'files'
+              }${splitZip ? ` · ${formatFileSize(splitZip.size)}` : ''}`}
+              downloadLabel="Download ZIP"
+              downloadName={`${splitStem}-split.zip`}
+              onHome={() => {
+                setSplitZip(null)
+                setScreen('home')
+              }}
+              onRetry={() => {
+                setSplitZip(null)
+                setScreen('split')
+              }}
+              result={splitZip}
+              retryLabel="Back to split"
+              title="Your files are ready"
+            />
+          ) : (
+            <ResultPage
+              description={`${files.length} files merged${
+                mergedPdf ? ` · ${formatFileSize(mergedPdf.size)}` : ''
+              }`}
+              downloadLabel="Download PDF"
+              downloadName="merged.pdf"
+              onHome={() => {
+                setMergedPdf(null)
+                setScreen('home')
+              }}
+              onRetry={() => {
+                setMergedPdf(null)
+                setScreen('merge')
+              }}
+              result={mergedPdf}
+              retryLabel="Back to merge"
+              title="Your PDF is ready"
+            />
+          )
         ) : (
           <ToolPlaceholder
             onBack={() => setScreen('home')}
