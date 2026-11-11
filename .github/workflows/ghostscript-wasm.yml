@@ -1,0 +1,48 @@
+name: ghostscript-wasm
+
+# Compila Ghostscript in WebAssembly per lo strumento Compress.
+# Parte da sola quando cambiano gli script di build, oppure a mano
+# (Actions → ghostscript-wasm → Run workflow) per scegliere un altro tag.
+# Il risultato è un artifact con gs.mjs e gs.wasm da copiare in
+# src/vendor/ghostscript/.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'wasm/ghostscript/**'
+      - '.github/workflows/ghostscript-wasm.yml'
+  workflow_dispatch:
+    inputs:
+      gs_tag:
+        description: 'Tag di ghostpdl da compilare'
+        required: true
+        default: 'ghostpdl-10.08.0'
+
+env:
+  # Su push non ci sono input: usiamo il tag predefinito.
+  GS_TAG: ${{ inputs.gs_tag || 'ghostpdl-10.08.0' }}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: emscripten/emsdk:6.0.13
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build tools
+        run: apt-get update && apt-get install --yes autoconf automake libtool pkg-config
+
+      - name: Build
+        run: bash wasm/ghostscript/compile.sh "$GS_TAG" out
+
+      - name: Smoke test
+        run: node wasm/ghostscript/smoke-test.mjs out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ghostscript-wasm-${{ env.GS_TAG }}
+          path: out/
