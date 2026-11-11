@@ -8,12 +8,15 @@ import { ResultPage } from './pages/ResultPage'
 import { SignPage } from './pages/SignPage'
 import { SplitPage } from './pages/SplitPage'
 import { ReorderPage } from './pages/ReorderPage'
+import { ProtectPage } from './pages/ProtectPage'
 import { ToolPlaceholder } from './pages/ToolPlaceholder'
 import { mergePdfs } from './lib/mergePdfs'
 import { splitPdf, type PageRange } from './lib/splitPdf'
 import { reorderPdf } from './lib/reorderPdf'
 import { signPdf, type SignPlacement } from './lib/signPdf'
 import { zipPdfs } from './lib/zipPdfs'
+import { protectPdf, type ProtectMode } from './lib/protectPdf'
+import { unlockPdf } from './lib/unlockPdf'
 import { formatFileSize } from './lib/pdfFiles'
 import type { Screen, ToolId } from './types'
 
@@ -25,7 +28,7 @@ export default function App() {
   // Quale strumento ha prodotto il risultato: decide cosa mostrano le schermate
   // condivise "progress" e "result".
   const [lastRun, setLastRun] = useState<
-    'merge' | 'split' | 'reorder' | 'sign'
+    'merge' | 'split' | 'reorder' | 'sign' | 'protect'
   >('merge')
 
   const [files, setFiles] = useState<File[]>([])
@@ -44,6 +47,11 @@ export default function App() {
   const [signFile, setSignFile] = useState<File | null>(null)
   const [signError, setSignError] = useState<string | null>(null)
   const [signedPdf, setSignedPdf] = useState<Blob | null>(null)
+
+  const [protectFile, setProtectFile] = useState<File | null>(null)
+  const [protectMode, setProtectMode] = useState<ProtectMode>('add')
+  const [protectError, setProtectError] = useState<string | null>(null)
+  const [protectedPdf, setProtectedPdf] = useState<Blob | null>(null)
 
   // Screens share one scroll position, so a new one would open scrolled down.
   useEffect(() => {
@@ -161,11 +169,47 @@ export default function App() {
     }
   }
 
+  async function startProtect(
+    file: File,
+    mode: ProtectMode,
+    password: string,
+  ) {
+    setLastRun('protect')
+    setProtectError(null)
+    setProtectedPdf(null)
+    setScreen('progress')
+
+    try {
+      const [protectedBytes] = await Promise.all([
+        mode === 'add' ? protectPdf(file, password) : unlockPdf(file, password),
+        new Promise((resolve) => setTimeout(resolve, 800)),
+      ])
+
+      const blob = new Blob([protectedBytes.slice()], {
+        type: 'application/pdf',
+      })
+      setProtectedPdf(blob)
+      setScreen('result')
+    } catch (error) {
+      setProtectError(
+        error instanceof Error
+          ? error.message
+          : mode === 'add'
+            ? 'Something went wrong while protecting your PDF.'
+            : 'Something went wrong while removing the password.',
+      )
+      setScreen('protect')
+    }
+  }
+
   const splitStem = splitFile ? splitFile.name.replace(/\.pdf$/i, '') : 'split'
   const reorderStem = reorderFile
     ? reorderFile.name.replace(/\.pdf$/i, '')
     : 'reordered'
   const signStem = signFile ? signFile.name.replace(/\.pdf$/i, '') : 'signed'
+  const protectStem = protectFile
+    ? protectFile.name.replace(/\.pdf$/i, '')
+    : 'protected'
 
   return (
     <div className="app" data-theme={theme}>
@@ -243,8 +287,41 @@ export default function App() {
             onStart={startSign}
             signError={signError}
           />
+        ) : screen === 'protect' ? (
+          <ProtectPage
+            file={protectFile}
+            onFileChange={(file) => {
+              setProtectFile(file)
+              setProtectError(null)
+            }}
+            onBack={() => {
+              setScreen('home')
+              setProtectError(null)
+            }}
+            mode={protectMode}
+            onModeChange={(mode) => {
+              setProtectMode(mode)
+              setProtectError(null)
+            }}
+            onStart={startProtect}
+            protectError={protectError}
+          />
         ) : screen === 'progress' ? (
-          lastRun === 'split' ? (
+          lastRun === 'protect' ? (
+            protectMode === 'add' ? (
+              <ProgressPage
+                description="Encrypting your PDF on your device. Your password never leaves it."
+                icon="protect"
+                title="Protecting your PDF"
+              />
+            ) : (
+              <ProgressPage
+                description="Decrypting your PDF on your device. Your password never leaves it."
+                icon="protect"
+                title="Removing the password"
+              />
+            )
+          ) : lastRun === 'split' ? (
             <ProgressPage
               description="Dividing the pages on your device. Large files can take a while."
               icon="split"
@@ -272,7 +349,34 @@ export default function App() {
             />
           )
         ) : screen === 'result' ? (
-          lastRun === 'split' ? (
+          lastRun === 'protect' ? (
+            <ResultPage
+              description={`${
+                protectMode === 'add' ? 'Password-protected' : 'Password removed'
+              }${
+                protectedPdf ? ` · ${formatFileSize(protectedPdf.size)}` : ''
+              }`}
+              downloadLabel="Download PDF"
+              downloadName={`${protectStem}-${
+                protectMode === 'add' ? 'protected' : 'unlocked'
+              }.pdf`}
+              onHome={() => {
+                setProtectedPdf(null)
+                setScreen('home')
+              }}
+              onRetry={() => {
+                setProtectedPdf(null)
+                setScreen('protect')
+              }}
+              result={protectedPdf}
+              retryLabel="Back to protect"
+              title={
+                protectMode === 'add'
+                  ? 'Your PDF is protected'
+                  : 'Your PDF is unlocked'
+              }
+            />
+          ) : lastRun === 'split' ? (
             <ResultPage
               description={`${splitPartCount} ${
                 splitPartCount === 1 ? 'file' : 'files'

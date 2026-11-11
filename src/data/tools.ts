@@ -66,7 +66,7 @@ export const featuredTools: Tool[] = [
   {
     id: 'protect',
     title: 'Protect',
-    description: 'Add a password in a few seconds.',
+    description: 'Add or remove a password in seconds.',
     action: 'Protect PDF',
     actionOneFile: 'Protect this PDF',
     actionManyFiles: (count) => `Protect ${count} PDFs`,

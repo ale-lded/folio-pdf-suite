@@ -1494,6 +1494,14 @@
     line-height: 1.5;
   }
 
+  .field__hint--error {
+    color: #ff8e78;
+  }
+
+  .field__input[aria-invalid='true'] {
+    border-color: #ff8e78;
+  }
+
   .toggle-row {
     display: flex;
     align-items: center;
