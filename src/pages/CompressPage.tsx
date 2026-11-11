@@ -1,10 +1,13 @@
 import { useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { SelectionNotice } from '../components/SelectionNotice'
 import { WorkspaceHeading } from '../components/WorkspaceHeading'
 import type { CompressionLevel } from '../lib/compressPdf'
 import { addPdfFiles, formatFileSize } from '../lib/pdfFiles'
 
 type CompressPageProps = {
+  /** Quanti PDF sono selezionati: se più di uno, la pagina usa il primo. */
+  selectedCount: number
   file: File | null
   onFileChange: (file: File | null) => void
   // Il livello vive in App: se la compressione fallisce e torniamo qui, resta
@@ -43,6 +46,7 @@ const compressionLevels: {
 ]
 
 export function CompressPage({
+  selectedCount,
   file,
   onFileChange,
   level,
@@ -163,6 +167,8 @@ export function CompressPage({
               </div>
             </div>
           )}
+
+          <SelectionNotice count={selectedCount} toolName="Compress" />
 
           {error && (
             <p className="form-message form-message--error" role="alert">

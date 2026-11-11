@@ -35,24 +35,30 @@ export default function App() {
     'merge' | 'split' | 'reorder' | 'sign' | 'protect' | 'compress'
   >('merge')
 
+  // Una sola selezione di file per tutto il sito: la home, Unisci e gli
+  // strumenti a file singolo leggono e scrivono questa stessa lista. Unisci li
+  // usa tutti; gli altri strumenti lavorano sul primo (currentFile).
   const [files, setFiles] = useState<File[]>([])
+  const currentFile = files[0] ?? null
+
+  // Dagli strumenti a file singolo: scegliere un file significa lavorare su
+  // quello; toglierlo passa al successivo, se ce n'era più d'uno.
+  function changeCurrentFile(file: File | null) {
+    setFiles((current) => (file ? [file] : current.slice(1)))
+  }
   const [mergeError, setMergeError] = useState<string | null>(null)
   const [mergedPdf, setMergedPdf] = useState<Blob | null>(null)
 
-  const [splitFile, setSplitFile] = useState<File | null>(null)
   const [splitError, setSplitError] = useState<string | null>(null)
   const [splitZip, setSplitZip] = useState<Blob | null>(null)
   const [splitPartCount, setSplitPartCount] = useState(0)
 
-  const [reorderFile, setReorderFile] = useState<File | null>(null)
   const [reorderError, setReorderError] = useState<string | null>(null)
   const [reorderedPdf, setReorderedPdf] = useState<Blob | null>(null)
 
-  const [signFile, setSignFile] = useState<File | null>(null)
   const [signError, setSignError] = useState<string | null>(null)
   const [signedPdf, setSignedPdf] = useState<Blob | null>(null)
 
-  const [compressFile, setCompressFile] = useState<File | null>(null)
   const [compressLevel, setCompressLevel] =
     useState<CompressionLevel>('balanced')
   const [compressError, setCompressError] = useState<string | null>(null)
@@ -60,7 +66,6 @@ export default function App() {
   // Dimensioni prima e dopo, per mostrare il risparmio nel risultato.
   const [compressSizes, setCompressSizes] = useState({ before: 0, after: 0 })
 
-  const [protectFile, setProtectFile] = useState<File | null>(null)
   const [protectMode, setProtectMode] = useState<ProtectMode>('add')
   const [protectError, setProtectError] = useState<string | null>(null)
   const [protectedPdf, setProtectedPdf] = useState<Blob | null>(null)
@@ -243,20 +248,22 @@ export default function App() {
     }
   }
 
-  const splitStem = splitFile ? splitFile.name.replace(/\.pdf$/i, '') : 'split'
-  const reorderStem = reorderFile
-    ? reorderFile.name.replace(/\.pdf$/i, '')
+  const splitStem = currentFile
+    ? currentFile.name.replace(/\.pdf$/i, '') : 'split'
+  const reorderStem = currentFile
+    ? currentFile.name.replace(/\.pdf$/i, '')
     : 'reordered'
-  const signStem = signFile ? signFile.name.replace(/\.pdf$/i, '') : 'signed'
-  const compressStem = compressFile
-    ? compressFile.name.replace(/\.pdf$/i, '')
+  const signStem = currentFile
+    ? currentFile.name.replace(/\.pdf$/i, '') : 'signed'
+  const compressStem = currentFile
+    ? currentFile.name.replace(/\.pdf$/i, '')
     : 'compressed'
   const compressSaving =
     compressSizes.before > 0
       ? Math.round((1 - compressSizes.after / compressSizes.before) * 100)
       : 0
-  const protectStem = protectFile
-    ? protectFile.name.replace(/\.pdf$/i, '')
+  const protectStem = currentFile
+    ? currentFile.name.replace(/\.pdf$/i, '')
     : 'protected'
 
   return (
@@ -293,9 +300,10 @@ export default function App() {
           />
         ) : screen === 'split' ? (
           <SplitPage
-            file={splitFile}
+            file={currentFile}
+            selectedCount={files.length}
             onFileChange={(file) => {
-              setSplitFile(file)
+              changeCurrentFile(file)
               setSplitError(null)
             }}
             onBack={() => {
@@ -307,9 +315,10 @@ export default function App() {
           />
         ) : screen === 'reorder' ? (
           <ReorderPage
-            file={reorderFile}
+            file={currentFile}
+            selectedCount={files.length}
             onFileChange={(file) => {
-              setReorderFile(file)
+              changeCurrentFile(file)
               setReorderError(null)
             }}
             onBack={() => {
@@ -322,14 +331,15 @@ export default function App() {
         ) : screen === 'compress' ? (
           <CompressPage
             compressError={compressError}
-            file={compressFile}
+            file={currentFile}
+            selectedCount={files.length}
             level={compressLevel}
             onBack={() => {
               setScreen('home')
               setCompressError(null)
             }}
             onFileChange={(file) => {
-              setCompressFile(file)
+              changeCurrentFile(file)
               setCompressError(null)
             }}
             onLevelChange={(level) => {
@@ -340,9 +350,10 @@ export default function App() {
           />
         ) : screen === 'sign' ? (
           <SignPage
-            file={signFile}
+            file={currentFile}
+            selectedCount={files.length}
             onFileChange={(file) => {
-              setSignFile(file)
+              changeCurrentFile(file)
               setSignError(null)
             }}
             onBack={() => {
@@ -354,9 +365,10 @@ export default function App() {
           />
         ) : screen === 'protect' ? (
           <ProtectPage
-            file={protectFile}
+            file={currentFile}
+            selectedCount={files.length}
             onFileChange={(file) => {
-              setProtectFile(file)
+              changeCurrentFile(file)
               setProtectError(null)
             }}
             onBack={() => {

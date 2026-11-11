@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent } from 'react'
 import { Icon } from '../components/Icon'
+import { SelectionNotice } from '../components/SelectionNotice'
 import { WorkspaceHeading } from '../components/WorkspaceHeading'
 import { addPdfFiles, formatFileSize } from '../lib/pdfFiles'
 import { renderPdfPage, usePdfThumbnails } from '../lib/usePdfThumbnails'
@@ -10,6 +11,8 @@ import type { SignPlacement } from '../lib/signPdf'
 type SignatureMode = 'draw' | 'type' | 'upload'
 
 type SignPageProps = {
+  /** Quanti PDF sono selezionati: se più di uno, la pagina usa il primo. */
+  selectedCount: number
   file: File | null
   onFileChange: (file: File | null) => void
   onStart: (
@@ -86,6 +89,7 @@ async function imageFileToPng(file: File): Promise<string> {
 }
 
 export function SignPage({
+  selectedCount,
   file,
   onFileChange,
   onStart,
@@ -353,6 +357,7 @@ export function SignPage({
       <div className="sign-layout">
         <aside aria-label="Signature options" className="sign-controls">
           {/* 1. Il PDF */}
+          <SelectionNotice count={selectedCount} toolName="Sign" />
           {file ? (
             <div className="file-row">
               <span aria-hidden="true" className="file-row__icon">

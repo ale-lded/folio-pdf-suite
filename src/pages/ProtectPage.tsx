@@ -1,10 +1,13 @@
 import { useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { SelectionNotice } from '../components/SelectionNotice'
 import { WorkspaceHeading } from '../components/WorkspaceHeading'
 import { addPdfFiles, formatFileSize } from '../lib/pdfFiles'
 import type { ProtectMode } from '../lib/protectPdf'
 
 type ProtectPageProps = {
+  /** Quanti PDF sono selezionati: se più di uno, la pagina usa il primo. */
+  selectedCount: number
   file: File | null
   onFileChange: (file: File | null) => void
   // La modalità vive in App: se l'operazione fallisce e torniamo qui, la
@@ -45,6 +48,7 @@ function SwitchRow({ label, hint, checked, onChange }: SwitchRowProps) {
 }
 
 export function ProtectPage({
+  selectedCount,
   file,
   onFileChange,
   mode,
@@ -196,6 +200,8 @@ export function ProtectPage({
               </div>
             </div>
           )}
+
+          <SelectionNotice count={selectedCount} toolName="Protect" />
 
           {error && (
             <p className="form-message form-message--error" role="alert">

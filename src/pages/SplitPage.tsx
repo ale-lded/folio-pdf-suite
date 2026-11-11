@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { PDFDocument } from 'pdf-lib'
 import { Icon } from '../components/Icon'
+import { SelectionNotice } from '../components/SelectionNotice'
 import { WorkspaceHeading } from '../components/WorkspaceHeading'
 import { addPdfFiles, formatFileSize } from '../lib/pdfFiles'
 import type { PageRange } from '../lib/splitPdf'
@@ -8,6 +9,8 @@ import type { PageRange } from '../lib/splitPdf'
 type SplitMode = 'every-page' | 'every-n' | 'custom'
 
 type SplitPageProps = {
+  /** Quanti PDF sono selezionati: se più di uno, la pagina usa il primo. */
+  selectedCount: number
   file: File | null
   onFileChange: (file: File | null) => void
   onStart: (file: File, ranges: PageRange[]) => void
@@ -16,6 +19,7 @@ type SplitPageProps = {
 }
 
 export function SplitPage({
+  selectedCount,
   file,
   onFileChange,
   onStart,
@@ -221,6 +225,8 @@ export function SplitPage({
               </div>
             </div>
           )}
+
+          <SelectionNotice count={selectedCount} toolName="Split" />
 
           {error && (
             <p className="form-message form-message--error" role="alert">

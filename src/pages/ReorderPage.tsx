@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { SelectionNotice } from '../components/SelectionNotice'
 import { WorkspaceHeading } from '../components/WorkspaceHeading'
 import { addPdfFiles } from '../lib/pdfFiles'
 import { usePdfThumbnails } from '../lib/usePdfThumbnails'
 import { usePointerSort } from '../lib/usePointerSort'
 
 type ReorderPageProps = {
+  /** Quanti PDF sono selezionati: se più di uno, la pagina usa il primo. */
+  selectedCount: number
   file: File | null
   onFileChange: (file: File | null) => void
   onStart: (file: File, order: number[]) => void
@@ -14,6 +17,7 @@ type ReorderPageProps = {
 }
 
 export function ReorderPage({
+  selectedCount,
   file,
   onFileChange,
   onStart,
@@ -172,6 +176,8 @@ export function ReorderPage({
               type="file"
             />
           </div>
+
+          <SelectionNotice count={selectedCount} toolName="Reorder" />
 
           {error && (
             <p className="form-message form-message--error" role="alert">
