@@ -2204,7 +2204,7 @@
     width: auto;
     height: auto;
     max-width: 100%;
-    max-height: clamp(320px, calc(100vh - 330px), 800px);
+    max-height: clamp(300px, calc(100vh - 365px), 780px);
   }
 
   .sign-placement__loading {
@@ -2239,6 +2239,31 @@
     width: 100%;
     height: auto;
     pointer-events: none;
+  }
+
+  /* Slider della dimensione firma, sotto la pagina. */
+  .sign-size {
+    display: flex;
+    flex: 0 0 auto;
+    width: min(100%, 320px);
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .sign-size input {
+    flex: 1 1 auto;
+    min-width: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .sign-size output {
+    min-width: 3.5ch;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
   }
 
   .sign-stage__hint {

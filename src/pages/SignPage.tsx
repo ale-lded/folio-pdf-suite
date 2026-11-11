@@ -298,6 +298,28 @@ export function SignPage({
     dragRef.current = null
   }
 
+  // ---- Dimensione della firma ------------------------------------------------
+  // Cambia la larghezza tenendo fermo il CENTRO della firma (sembra uno zoom
+  // sul posto), poi la riporta dentro la pagina se ora sborda.
+  function resizeSignature(newWidth: number) {
+    const pageAspect = renderedPage ? renderedPage.width / renderedPage.height : 1
+
+    setPlacement((prev) => {
+      const oldHeight = prev.width * sigAspect * pageAspect
+      const newHeight = newWidth * sigAspect * pageAspect
+      const centerX = prev.x + prev.width / 2
+      const centerY = prev.y + oldHeight / 2
+      const clamp = (value: number, max: number) =>
+        Math.min(Math.max(0, max), Math.max(0, value))
+
+      return {
+        width: newWidth,
+        x: clamp(centerX - newWidth / 2, 1 - newWidth),
+        y: clamp(centerY - newHeight / 2, 1 - newHeight),
+      }
+    })
+  }
+
   function apply() {
     if (!file) {
       setMessage('Choose a PDF to sign.')
@@ -586,6 +608,24 @@ export function SignPage({
                   </div>
                 </div>
   
+                {signature && renderedPage && (
+                  <label className="sign-size">
+                    <span>Size</span>
+                    <input
+                      aria-valuetext={`${Math.round(placement.width * 100)}% of the page width`}
+                      max={0.8}
+                      min={0.1}
+                      onChange={(event) =>
+                        resizeSignature(Number(event.currentTarget.value))
+                      }
+                      step={0.01}
+                      type="range"
+                      value={placement.width}
+                    />
+                    <output>{Math.round(placement.width * 100)}%</output>
+                  </label>
+                )}
+
                 <p className="sign-stage__hint">
                   {signature
                     ? 'Drag the signature to place it, then press Sign PDF.'
