@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { WorkspaceHeading } from '../components/WorkspaceHeading'
 import { addPdfFiles, formatFileSize, maxFiles, maxTotalSize } from '../lib/pdfFiles'
+import { usePointerSort } from '../lib/usePointerSort'
 
 type SortMode = 'manual' | 'name' | 'date'
 
@@ -25,8 +26,6 @@ export function MergePage({
   const [sortMode, setSortMode] = useState<SortMode>('manual')
   const [error, setError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
-  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null)
   const canReorder = sortMode === 'manual'
 
   const visibleFiles = useMemo(() => {
@@ -86,10 +85,9 @@ export function MergePage({
     moveFileTo(index, index + offset)
   }
 
-  function resetRowDrag() {
-    setDraggedIndex(null)
-    setDropTargetIndex(null)
-  }
+  // Trascinamento con mouse, dito o penna (sul telefono: pressione prolungata).
+  // Solo in ordine manuale: con un ordinamento attivo le righe non si spostano.
+  const { drag, itemProps, dragStyle } = usePointerSort(moveFileTo)
 
   function handleDrop(event: React.DragEvent<HTMLDivElement>) {
     event.preventDefault()
@@ -216,43 +214,19 @@ export function MergePage({
             <ol aria-label="PDF merge order" className="file-list">
               {visibleFiles.map((file, index) => (
                 <li
+                  {...(canReorder ? itemProps(index) : {})}
                   className={[
                     'file-row',
                     canReorder && 'file-row--draggable',
-                    draggedIndex === index && 'file-row--dragging',
-                    dropTargetIndex === index &&
-                      draggedIndex !== index &&
+                    drag?.from === index && 'file-row--dragging',
+                    drag?.over === index &&
+                      drag.from !== index &&
                       'file-row--drop-target',
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  draggable={canReorder}
                   key={`${file.name}-${file.lastModified}-${index}`}
-                  onDragEnd={resetRowDrag}
-                  onDragOver={(event) => {
-                    if (draggedIndex === null) {
-                      return
-                    }
-
-                    event.preventDefault()
-                    event.dataTransfer.dropEffect = 'move'
-                    setDropTargetIndex(index)
-                  }}
-                  onDragStart={(event) => {
-                    event.dataTransfer.effectAllowed = 'move'
-                    // Firefox needs some data set before it starts a drag.
-                    event.dataTransfer.setData('text/plain', String(index))
-                    setDraggedIndex(index)
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault()
-
-                    if (draggedIndex !== null) {
-                      moveFileTo(draggedIndex, index)
-                    }
-
-                    resetRowDrag()
-                  }}
+                  style={dragStyle(index)}
                 >
                   <span className="file-row__number">
                     {String(index + 1).padStart(2, '0')}

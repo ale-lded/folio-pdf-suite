@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon'
 import { WorkspaceHeading } from '../components/WorkspaceHeading'
 import { addPdfFiles } from '../lib/pdfFiles'
 import { usePdfThumbnails } from '../lib/usePdfThumbnails'
+import { usePointerSort } from '../lib/usePointerSort'
 
 type ReorderPageProps = {
   file: File | null
@@ -29,10 +30,6 @@ export function ReorderPage({
 
   // Lettura + rendering delle pagine (pageCount subito, miniature a seguire).
   const { status, pageCount, thumbs } = usePdfThumbnails(file)
-
-  // Drag di una tessera: posizione trascinata e posizione sotto il cursore.
-  const [draggedAt, setDraggedAt] = useState<number | null>(null)
-  const [dropTargetAt, setDropTargetAt] = useState<number | null>(null)
 
   // Appena il numero di pagine è noto, inizializzo l'ordine a quello naturale.
   // Dipende anche da `file` così due PDF con lo stesso numero di pagine si
@@ -87,9 +84,22 @@ export function ReorderPage({
     setOrder(order.filter((_, index) => index !== position))
   }
 
-  function resetRowDrag() {
-    setDraggedAt(null)
-    setDropTargetAt(null)
+  // Trascinamento con mouse, dito o penna (sul telefono: pressione prolungata).
+  const { drag, itemProps, dragStyle } = usePointerSort(moveTileTo)
+
+  // Da tastiera: le frecce spostano la pagina che ha il focus.
+  function handleTileKey(event: React.KeyboardEvent, position: number) {
+    const step =
+      event.key === 'ArrowLeft' || event.key === 'ArrowUp'
+        ? -1
+        : event.key === 'ArrowRight' || event.key === 'ArrowDown'
+          ? 1
+          : 0
+
+    if (step !== 0) {
+      event.preventDefault()
+      moveTileTo(position, position + step)
+    }
   }
 
   const isReady = pageCount > 0 && order.length > 0
@@ -179,7 +189,10 @@ export function ReorderPage({
               <div className="file-list-heading">
                 <div>
                   <h2>Your pages</h2>
-                  <p>Drag a page to move it. Use the × to drop one you don't need.</p>
+                  <p>
+                    Drag a page to move it (on a touch screen, press and hold it
+                    first). Use the × to drop one you don't need.
+                  </p>
                 </div>
               </div>
 
@@ -211,36 +224,21 @@ export function ReorderPage({
                 <ol aria-label="Pages in their new order" className="page-grid">
                   {order.map((pageIndex, position) => (
                     <li
+                      {...itemProps(position)}
+                      aria-label={`Page ${pageIndex + 1}, position ${position + 1} of ${order.length}. Use the arrow keys to move it.`}
                       className={[
                         'page-tile',
-                        draggedAt === position && 'page-tile--dragging',
-                        dropTargetAt === position &&
-                          draggedAt !== position &&
+                        drag?.from === position && 'page-tile--dragging',
+                        drag?.over === position &&
+                          drag.from !== position &&
                           'page-tile--drop-target',
                       ]
                         .filter(Boolean)
                         .join(' ')}
-                      draggable
                       key={pageIndex}
-                      onDragEnd={resetRowDrag}
-                      onDragOver={(event) => {
-                        if (draggedAt === null) return
-                        event.preventDefault()
-                        event.dataTransfer.dropEffect = 'move'
-                        setDropTargetAt(position)
-                      }}
-                      onDragStart={(event) => {
-                        event.dataTransfer.effectAllowed = 'move'
-                        event.dataTransfer.setData('text/plain', String(position))
-                        setDraggedAt(position)
-                      }}
-                      onDrop={(event) => {
-                        event.preventDefault()
-                        if (draggedAt !== null) {
-                          moveTileTo(draggedAt, position)
-                        }
-                        resetRowDrag()
-                      }}
+                      onKeyDown={(event) => handleTileKey(event, position)}
+                      style={dragStyle(position)}
+                      tabIndex={0}
                     >
                       <button
                         aria-label={`Remove page ${pageIndex + 1}`}

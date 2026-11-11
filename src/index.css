@@ -1408,8 +1408,23 @@
     cursor: grabbing;
   }
 
-  .file-row--dragging {
-    opacity: 0.45;
+  /* L'elemento trascinato segue il puntatore (transform da usePointerSort).
+     pointer-events: none serve a "vedere" l'elemento sotto di lui. */
+  .file-row--dragging,
+  .page-tile--dragging {
+    position: relative;
+    z-index: 10;
+    opacity: 0.92;
+    box-shadow: 0 14px 32px rgb(0 0 0 / 0.28);
+    pointer-events: none;
+    transition: none;
+  }
+
+  /* Niente selezione del testo né menu "copia immagine" con il long press. */
+  .file-row--draggable,
+  .page-tile {
+    -webkit-touch-callout: none;
+    user-select: none;
   }
 
   .file-row--drop-target {
@@ -1451,10 +1466,6 @@
 
   .page-tile:active {
     cursor: grabbing;
-  }
-
-  .page-tile--dragging {
-    opacity: 0.4;
   }
 
   .page-tile--drop-target {
@@ -1523,8 +1534,21 @@
   }
 
   .page-tile:hover .page-tile__remove,
+  .page-tile:focus-visible .page-tile__remove,
   .page-tile__remove:focus-visible {
     opacity: 1;
+  }
+
+  /* Sui touch screen non c'è hover: la × deve essere sempre visibile. */
+  @media (hover: none) {
+    .page-tile__remove {
+      opacity: 1;
+    }
+  }
+
+  .page-tile:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
   }
 
   .page-tile__remove:hover {
@@ -2800,6 +2824,39 @@
     width: 44px;
     height: 44px;
     border-radius: 14px;
+  }
+}
+
+/*
+ * Touch screens. Matches by input type (pointer: coarse), not by width, so a
+ * tablet in landscape gets these too.
+ */
+@media (pointer: coarse) {
+  /* iOS Safari zooms the whole page into any field whose text is under 16px. */
+  input:not([type='range'], [type='file'], [type='radio'], [type='checkbox']),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  /* Bigger targets for a finger: ↑ ↓ × in file rows, × on page tiles. */
+  .icon-button {
+    width: 36px;
+    height: 36px;
+  }
+
+  .page-tile__remove {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 600px) {
+  /* A closed tool is a 46px strip: the whole strip opens it, not just the icon. */
+  .accordion-panel:not(.accordion-panel--active) .accordion-panel__toggle {
+    inset: 0;
+    align-items: center;
+    padding: 0 9px;
   }
 }
 
