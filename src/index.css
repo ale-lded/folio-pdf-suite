@@ -1283,7 +1283,7 @@
   /* Reorder: una griglia di tessere-pagina trascinabili. */
   .page-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
     gap: 12px;
     margin: 0;
     padding: 0;
@@ -1295,9 +1295,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 18px 10px 14px;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 8px 8px 10px;
     border: 1px solid var(--border);
     border-radius: 14px;
     background: var(--surface-raised);
@@ -1327,12 +1327,36 @@
 
   .page-tile__thumb {
     display: grid;
-    width: 56px;
-    height: 72px;
+    width: 100%;
+    aspect-ratio: 3 / 4;
     place-items: center;
+    overflow: hidden;
+    border: 1px solid var(--border);
     border-radius: 8px;
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    color: var(--accent);
+    background: #fff;
+  }
+
+  .page-tile__img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .page-tile__thumb-wait {
+    width: 100%;
+    height: 100%;
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+    animation: tile-pulse 1.1s ease-in-out infinite;
+  }
+
+  @keyframes tile-pulse {
+    0%,
+    100% {
+      opacity: 0.5;
+    }
+    50% {
+      opacity: 1;
+    }
   }
 
   .page-tile__label {

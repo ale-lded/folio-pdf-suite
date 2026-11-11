@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { PDFDocument } from 'pdf-lib'
 import { Icon } from '../components/Icon'
 import { WorkspaceHeading } from '../components/WorkspaceHeading'
 import { addPdfFiles } from '../lib/pdfFiles'
+import { usePdfThumbnails } from '../lib/usePdfThumbnails'
 
 type ReorderPageProps = {
   file: File | null
@@ -26,43 +26,24 @@ export function ReorderPage({
   // `order` è la sequenza di indici di pagina (0-based) nello stato attuale.
   // Parte da [0, 1, 2, …] e il trascinamento la rimescola.
   const [order, setOrder] = useState<number[]>([])
-  const [pageCount, setPageCount] = useState<number | null>(null)
+
+  // Lettura + rendering delle pagine (pageCount subito, miniature a seguire).
+  const { status, pageCount, thumbs } = usePdfThumbnails(file)
 
   // Drag di una tessera: posizione trascinata e posizione sotto il cursore.
   const [draggedAt, setDraggedAt] = useState<number | null>(null)
   const [dropTargetAt, setDropTargetAt] = useState<number | null>(null)
 
-  // Appena il file cambia: leggiamo il numero di pagine e inizializziamo
-  // l'ordine a quello naturale. Lettura asincrona, con guard anti-race.
+  // Appena il numero di pagine è noto, inizializzo l'ordine a quello naturale.
+  // Dipende anche da `file` così due PDF con lo stesso numero di pagine si
+  // reinizializzano comunque.
   useEffect(() => {
-    if (!file) {
-      setPageCount(null)
-      setOrder([])
-      return
-    }
-
-    let cancelled = false
-
-    file
-      .arrayBuffer()
-      .then((bytes) => PDFDocument.load(bytes))
-      .then((pdf) => {
-        if (cancelled) return
-        const count = pdf.getPageCount()
-        setPageCount(count)
-        setOrder(Array.from({ length: count }, (_, index) => index))
-      })
-      .catch(() => {
-        if (cancelled) return
-        setPageCount(null)
-        setOrder([])
-        setError(`"${file.name}" could not be read. It may be damaged or not a real PDF.`)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [file])
+    setOrder(
+      pageCount > 0
+        ? Array.from({ length: pageCount }, (_, index) => index)
+        : [],
+    )
+  }, [pageCount, file])
 
   function chooseFile(fileList: FileList) {
     const result = addPdfFiles([], fileList)
@@ -111,9 +92,9 @@ export function ReorderPage({
     setDropTargetAt(null)
   }
 
-  const isReady = pageCount !== null && order.length > 0
+  const isReady = pageCount > 0 && order.length > 0
   const isChanged =
-    pageCount !== null &&
+    pageCount > 0 &&
     (order.length !== pageCount ||
       order.some((pageIndex, position) => pageIndex !== position))
 
@@ -202,7 +183,15 @@ export function ReorderPage({
                 </div>
               </div>
 
-              {pageCount === null ? (
+              {status === 'error' ? (
+                <div className="file-empty-state">
+                  <span className="icon-disc">
+                    <Icon name="file" />
+                  </span>
+                  <strong>Couldn't read this PDF</strong>
+                  <p>It may be damaged, password-protected or not a real PDF.</p>
+                </div>
+              ) : pageCount === 0 ? (
                 <div className="file-empty-state">
                   <span className="icon-disc">
                     <Icon name="file" />
@@ -262,7 +251,16 @@ export function ReorderPage({
                         <Icon name="close" size={14} />
                       </button>
                       <span className="page-tile__thumb">
-                        <Icon name="file" size={22} />
+                        {thumbs[pageIndex] ? (
+                          <img
+                            alt=""
+                            className="page-tile__img"
+                            draggable={false}
+                            src={thumbs[pageIndex] ?? undefined}
+                          />
+                        ) : (
+                          <span className="page-tile__thumb-wait" aria-hidden="true" />
+                        )}
                       </span>
                       <span className="page-tile__label">
                         Page {pageIndex + 1}
@@ -281,11 +279,13 @@ export function ReorderPage({
             <p>
               {!file
                 ? 'Choose a PDF to begin'
-                : pageCount === null
-                  ? 'Reading the PDF…'
-                  : `${order.length} of ${pageCount} ${
-                      pageCount === 1 ? 'page' : 'pages'
-                    } kept`}
+                : status === 'error'
+                  ? "Couldn't read this PDF"
+                  : pageCount === 0
+                    ? 'Reading the PDF…'
+                    : `${order.length} of ${pageCount} ${
+                        pageCount === 1 ? 'page' : 'pages'
+                      } kept`}
             </p>
           </div>
           <div className="options__divider" />
