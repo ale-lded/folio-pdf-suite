@@ -1994,9 +1994,10 @@
     touch-action: none;
     border: 1px dashed var(--border);
     border-radius: 14px;
+    /* Foglio chiaro in entrambi i temi: l'inchiostro scuro si vede in diretta. */
     background:
-      linear-gradient(transparent calc(100% - 25px), var(--border) 0) 0 0 / 100% 100% no-repeat,
-      var(--surface-raised);
+      linear-gradient(transparent calc(100% - 25px), #d8d2c8 0) 0 0 / 100% 100% no-repeat,
+      #fbfaf7;
     cursor: crosshair;
   }
 
@@ -2057,13 +2058,194 @@
 
   .sign-preview {
     display: flex;
-    min-height: 550px;
+    /* Altezza definita: il foglio si adatta QUI dentro, non sborda mai. */
+    height: clamp(460px, calc(100vh - 240px), 860px);
+    align-items: stretch;
     justify-content: center;
     overflow: hidden;
-    padding: 28px;
+    padding: 24px;
     border: 1px solid var(--border);
     border-radius: 22px;
     background: var(--surface-raised);
+  }
+
+  /* Colonna destra: scelta pagina + area di posizionamento. */
+  .sign-preview__empty {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 10px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .sign-preview__empty strong {
+    color: var(--text);
+    font-size: 15px;
+  }
+
+  .sign-preview__empty p {
+    margin: 0;
+    font-size: 13px;
+  }
+
+  /* Due colonne: miniature a sinistra (scorrono in verticale), pagina
+     selezionata a destra con tutto lo spazio che resta. */
+  .sign-stage {
+    display: flex;
+    width: 100%;
+    min-height: 0;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .sign-stage__main {
+    display: flex;
+    min-width: 0;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+
+  /* La pagina occupa lo spazio sopra il testo d'aiuto, restando sempre intera. */
+  .sign-stage__canvas {
+    display: flex;
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .sign-stage__hint {
+    flex: 0 0 auto;
+  }
+
+  .sign-page-picker {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    /* Tante pagine: la colonna scorre, la pagina grande resta ferma. */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 4px 8px 4px 4px;
+    scrollbar-width: thin;
+  }
+
+  .sign-page-thumb {
+    position: relative;
+    flex: 0 0 auto;
+    width: 64px;
+    height: 84px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: #fff;
+    cursor: pointer;
+    overflow: hidden;
+  }
+
+  .sign-page-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .sign-page-thumb__wait {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  }
+
+  .sign-page-thumb__n {
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: rgb(0 0 0 / 55%);
+    color: #fff;
+    font-size: 10px;
+  }
+
+  .sign-page-thumb--selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  /* Il contenitore avvolge l'immagine (width: fit-content), così la firma —
+     posizionata in percentuale — resta allineata alla pagina anche quando
+     questa è più stretta della colonna. L'altezza è limitata per far stare
+     l'INTERA pagina a schermo, così si può firmare anche in fondo. */
+  /* Il box avvolge esattamente l'immagine (sotto), così la firma — posizionata
+     in percentuale — resta allineata alla pagina. */
+  .sign-placement {
+    position: relative;
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 6px;
+    background: #fff;
+    box-shadow: 0 10px 28px rgb(0 0 0 / 16%);
+    overflow: hidden;
+    touch-action: none;
+  }
+
+  /* L'altezza è limitata in vh (niente percentuali circolari): l'intera pagina
+     sta nel box, in verticale, e la larghezza segue mantenendo le proporzioni. */
+  .sign-placement__page {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: clamp(320px, calc(100vh - 330px), 800px);
+  }
+
+  .sign-placement__loading {
+    display: grid;
+    place-items: center;
+    width: min(70vw, 430px);
+    color: #8d887e;
+    font-size: 13px;
+  }
+
+  .sign-placement__sig {
+    position: absolute;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .sign-placement__sig:active {
+    cursor: grabbing;
+  }
+
+  .sign-placement__sig::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border: 1px dashed color-mix(in srgb, var(--accent) 70%, transparent);
+    border-radius: 6px;
+    pointer-events: none;
+  }
+
+  .sign-placement__sig img {
+    display: block;
+    width: 100%;
+    height: auto;
+    pointer-events: none;
+  }
+
+  .sign-stage__hint {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
   }
 
   .contract {
@@ -2301,6 +2483,24 @@
   .sign-preview {
     min-height: 430px;
     padding: 14px;
+  }
+
+  /* Telefono: niente spazio per una colonna, le miniature tornano in alto. */
+  .sign-stage {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sign-page-picker {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 2px 6px;
+  }
+
+  .sign-page-thumb {
+    width: 52px;
+    height: 68px;
   }
 
   .contract {

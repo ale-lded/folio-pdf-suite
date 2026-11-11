@@ -12,6 +12,7 @@ import { ToolPlaceholder } from './pages/ToolPlaceholder'
 import { mergePdfs } from './lib/mergePdfs'
 import { splitPdf, type PageRange } from './lib/splitPdf'
 import { reorderPdf } from './lib/reorderPdf'
+import { signPdf, type SignPlacement } from './lib/signPdf'
 import { zipPdfs } from './lib/zipPdfs'
 import { formatFileSize } from './lib/pdfFiles'
 import type { Screen, ToolId } from './types'
@@ -23,7 +24,9 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
   // Quale strumento ha prodotto il risultato: decide cosa mostrano le schermate
   // condivise "progress" e "result".
-  const [lastRun, setLastRun] = useState<'merge' | 'split' | 'reorder'>('merge')
+  const [lastRun, setLastRun] = useState<
+    'merge' | 'split' | 'reorder' | 'sign'
+  >('merge')
 
   const [files, setFiles] = useState<File[]>([])
   const [mergeError, setMergeError] = useState<string | null>(null)
@@ -37,6 +40,10 @@ export default function App() {
   const [reorderFile, setReorderFile] = useState<File | null>(null)
   const [reorderError, setReorderError] = useState<string | null>(null)
   const [reorderedPdf, setReorderedPdf] = useState<Blob | null>(null)
+
+  const [signFile, setSignFile] = useState<File | null>(null)
+  const [signError, setSignError] = useState<string | null>(null)
+  const [signedPdf, setSignedPdf] = useState<Blob | null>(null)
 
   // Screens share one scroll position, so a new one would open scrolled down.
   useEffect(() => {
@@ -125,10 +132,40 @@ export default function App() {
     }
   }
 
+  async function startSign(
+    file: File,
+    signaturePng: Uint8Array,
+    placement: SignPlacement,
+  ) {
+    setLastRun('sign')
+    setSignError(null)
+    setSignedPdf(null)
+    setScreen('progress')
+
+    try {
+      const [signedBytes] = await Promise.all([
+        signPdf(file, signaturePng, placement),
+        new Promise((resolve) => setTimeout(resolve, 800)),
+      ])
+
+      const blob = new Blob([signedBytes.slice()], { type: 'application/pdf' })
+      setSignedPdf(blob)
+      setScreen('result')
+    } catch (error) {
+      setSignError(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while signing your PDF.',
+      )
+      setScreen('sign')
+    }
+  }
+
   const splitStem = splitFile ? splitFile.name.replace(/\.pdf$/i, '') : 'split'
   const reorderStem = reorderFile
     ? reorderFile.name.replace(/\.pdf$/i, '')
     : 'reordered'
+  const signStem = signFile ? signFile.name.replace(/\.pdf$/i, '') : 'signed'
 
   return (
     <div className="app" data-theme={theme}>
@@ -193,7 +230,19 @@ export default function App() {
         ) : screen === 'compress' ? (
           <CompressPage onBack={() => setScreen('home')} />
         ) : screen === 'sign' ? (
-          <SignPage onBack={() => setScreen('home')} />
+          <SignPage
+            file={signFile}
+            onFileChange={(file) => {
+              setSignFile(file)
+              setSignError(null)
+            }}
+            onBack={() => {
+              setScreen('home')
+              setSignError(null)
+            }}
+            onStart={startSign}
+            signError={signError}
+          />
         ) : screen === 'progress' ? (
           lastRun === 'split' ? (
             <ProgressPage
@@ -206,6 +255,12 @@ export default function App() {
               description="Rebuilding the PDF in its new order on your device."
               icon="reorder"
               title="Reordering your PDF"
+            />
+          ) : lastRun === 'sign' ? (
+            <ProgressPage
+              description="Stamping your signature into the page on your device."
+              icon="sign"
+              title="Signing your PDF"
             />
           ) : (
             <ProgressPage
@@ -253,6 +308,25 @@ export default function App() {
               }}
               result={reorderedPdf}
               retryLabel="Back to reorder"
+              title="Your PDF is ready"
+            />
+          ) : lastRun === 'sign' ? (
+            <ResultPage
+              description={`Signed${
+                signedPdf ? ` · ${formatFileSize(signedPdf.size)}` : ''
+              }`}
+              downloadLabel="Download PDF"
+              downloadName={`${signStem}-signed.pdf`}
+              onHome={() => {
+                setSignedPdf(null)
+                setScreen('home')
+              }}
+              onRetry={() => {
+                setSignedPdf(null)
+                setScreen('sign')
+              }}
+              result={signedPdf}
+              retryLabel="Back to sign"
               title="Your PDF is ready"
             />
           ) : (

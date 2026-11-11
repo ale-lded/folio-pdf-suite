@@ -17,6 +17,57 @@ export type PdfThumbnails = {
 
 const EMPTY: PdfThumbnails = { status: 'idle', pageCount: 0, thumbs: [] }
 
+export type RenderedPage = {
+  /**
+   * Immagine della pagina come DATA URL. Scelta volutamente invece di un blob
+   * URL: un data URL non può essere revocato, quindi l'anteprima non può
+   * "rompersi" durante i molti re-render (es. mentre si trascina uno slider).
+   */
+  url: string
+  /** Dimensioni della pagina in punti PDF, utili a calcolare le proporzioni. */
+  width: number
+  height: number
+}
+
+/**
+ * Rende UNA pagina a risoluzione utile (non una miniatura): serve all'area di
+ * posizionamento della firma, dove la pagina deve vedersi nitida.
+ */
+export async function renderPdfPage(
+  file: File,
+  pageIndex: number,
+  targetWidth = 680,
+): Promise<RenderedPage> {
+  const data = await file.arrayBuffer()
+  const pdf = await pdfjs.getDocument({ data }).promise
+
+  try {
+    const page = await pdf.getPage(pageIndex + 1)
+    const base = page.getViewport({ scale: 1 })
+    const viewport = page.getViewport({ scale: targetWidth / base.width })
+
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.ceil(viewport.width)
+    canvas.height = Math.ceil(viewport.height)
+    const context = canvas.getContext('2d')
+
+    if (!context) {
+      throw new Error('Canvas not available')
+    }
+
+    await page.render({ canvasContext: context, viewport }).promise
+    page.cleanup()
+
+    return {
+      url: canvas.toDataURL('image/jpeg', 0.85),
+      width: base.width,
+      height: base.height,
+    }
+  } finally {
+    await pdf.destroy()
+  }
+}
+
 /**
  * Rende le pagine di un PDF in miniature, una alla volta e in modo progressivo:
  * `pageCount` arriva subito, poi ogni `thumbs[i]` si popola man mano che la
