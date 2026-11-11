@@ -5,3 +5,6 @@ coverage/
 .env*
 *.log
 *.tsbuildinfo
+
+# Generato da scripts/collect-licenses.mjs prima di dev e build.
+public/third-party-licenses.txt

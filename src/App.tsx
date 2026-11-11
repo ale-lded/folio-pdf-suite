@@ -10,6 +10,9 @@ import { SplitPage } from './pages/SplitPage'
 import { ReorderPage } from './pages/ReorderPage'
 import { ProtectPage } from './pages/ProtectPage'
 import { ToolPlaceholder } from './pages/ToolPlaceholder'
+import { LicensesPage } from './pages/LicensesPage'
+import { LegalPage } from './pages/LegalPage'
+import { author, sourceUrl } from './data/site'
 import { mergePdfs } from './lib/mergePdfs'
 import { splitPdf, type PageRange } from './lib/splitPdf'
 import { reorderPdf } from './lib/reorderPdf'
@@ -368,6 +371,13 @@ export default function App() {
             onStart={startProtect}
             protectError={protectError}
           />
+        ) : screen === 'licenses' ? (
+          <LicensesPage onBack={() => setScreen('home')} />
+        ) : screen === 'legal' ? (
+          <LegalPage
+            onBack={() => setScreen('home')}
+            onLicenses={() => setScreen('licenses')}
+          />
         ) : screen === 'progress' ? (
           lastRun === 'compress' ? (
             <ProgressPage
@@ -548,7 +558,45 @@ export default function App() {
         )}
       </main>
       <footer className="site-footer">
-        Folio PDF <span aria-hidden="true">·</span> private by design
+        <span>
+          Folio PDF <span aria-hidden="true">·</span> private by design
+        </span>
+        <span aria-hidden="true">·</span>
+        <nav aria-label="About Folio PDF" className="site-footer__links">
+          <a
+            className="site-footer__link"
+            href={sourceUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Source code (AGPL-3.0)
+          </a>
+          <span aria-hidden="true">·</span>
+          <button
+            className="site-footer__link"
+            onClick={() => setScreen('licenses')}
+            type="button"
+          >
+            Licenses
+          </button>
+          <span aria-hidden="true">·</span>
+          <button
+            className="site-footer__link"
+            onClick={() => setScreen('legal')}
+            type="button"
+          >
+            Legal notice
+          </button>
+          <span aria-hidden="true">·</span>
+          <a
+            className="site-footer__link site-footer__link--author"
+            href={author.url}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Made by {author.name} ↗
+          </a>
+        </nav>
       </footer>
     </div>
   )
