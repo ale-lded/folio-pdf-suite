@@ -1667,7 +1667,6 @@
     to { transform: translateX(250%); }
   }
 
-
   .process-card__note {
     margin: 12px 0 24px;
     color: var(--muted);
@@ -1717,114 +1716,6 @@
     margin-top: 24px;
   }
 
-  .compress-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 360px;
-    align-items: start;
-    gap: 24px;
-  }
-
-  .compare {
-    overflow: hidden;
-    padding: 22px;
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    background: var(--surface);
-  }
-
-  .compare__heading,
-  .compare-label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .compare__heading strong {
-    font-size: 15px;
-  }
-
-  .compare__heading span {
-    padding: 5px 8px;
-    border-radius: 999px;
-    background: var(--surface-raised);
-    color: var(--muted);
-    font-size: 10px;
-  }
-
-  .compare-label {
-    margin: 22px 0 10px;
-    color: var(--muted);
-    font-size: 11px;
-  }
-
-  .document-preview {
-    position: relative;
-    display: flex;
-    width: min(100%, 520px);
-    min-height: 360px;
-    flex-direction: column;
-    gap: 13px;
-    margin-inline: auto;
-    padding: 36px;
-    background: #f8f5ed;
-    box-shadow: 0 12px 30px rgb(0 0 0 / 12%);
-    color: #28241f;
-  }
-
-  .document-preview__eyebrow {
-    font-size: 9px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .document-preview > strong {
-    margin-block: 16px 8px;
-    font-size: 30px;
-    letter-spacing: -0.05em;
-    line-height: 0.98;
-  }
-
-  .document-preview__line {
-    display: block;
-    width: 100%;
-    height: 4px;
-    border-radius: 99px;
-    background: rgb(40 36 31 / 14%);
-  }
-
-  .document-preview__line--short {
-    width: 58%;
-  }
-
-  .document-preview__line--medium {
-    width: 78%;
-  }
-
-  .document-preview__divider {
-    position: absolute;
-    top: 50%;
-    right: -17px;
-    display: grid;
-    width: 34px;
-    height: 34px;
-    place-items: center;
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    background: var(--surface);
-    color: var(--accent);
-    font-size: 18px;
-    transform: translateY(-50%);
-  }
-
-  .compare__note {
-    margin: 14px 0 0;
-    color: var(--muted);
-    font-size: 11px;
-    line-height: 1.5;
-  }
-
   .compression > h2 {
     margin: 0 0 16px;
     font-size: 17px;
@@ -1833,6 +1724,10 @@
   .compression-levels {
     display: grid;
     gap: 8px;
+  }
+
+  .compression .field__hint {
+    margin: 16px 0 0;
   }
 
   .compression-option {
@@ -1910,25 +1805,6 @@
   .compression-option__size {
     color: var(--muted);
     font-variant-numeric: tabular-nums;
-  }
-
-  .estimate {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 20px 0 0;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-  }
-
-  .estimate span {
-    color: var(--muted);
-    font-size: 12px;
-  }
-
-  .estimate strong {
-    color: var(--accent);
-    font-size: 21px;
   }
 
   .form-message--info {
@@ -2500,15 +2376,6 @@
     padding: 18px;
   }
 
-  .compress-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .document-preview {
-    min-height: 300px;
-    padding: 28px;
-  }
-
   .sign-layout {
     grid-template-columns: 1fr;
   }
@@ -2573,8 +2440,7 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .merge-layout,
-  .compress-layout {
+  .merge-layout {
     grid-template-columns: minmax(0, 1fr) 300px;
     gap: 16px;
   }
@@ -2648,7 +2514,6 @@
 
 @media (max-width: 720px) {
   .merge-layout,
-  .compress-layout,
   .sign-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2681,7 +2546,6 @@
   }
 
   .merge-layout,
-  .compress-layout,
   .sign-layout {
     min-height: 0;
     flex: 1 1 auto;
@@ -2713,8 +2577,7 @@
     display: none;
   }
 
-  .merge-files,
-  .compare {
+  .merge-files {
     display: flex;
     min-height: 0;
     flex-direction: column;
@@ -2747,33 +2610,9 @@
     margin-block: 14px;
   }
 
-  .compare {
-    padding: 18px;
-  }
-
-  .compare-label {
-    margin-block: 12px 8px;
-  }
-
-  .document-preview {
-    min-height: 0;
-    flex: 1 1 auto;
-    gap: 10px;
-    padding: 24px;
-  }
-
-  .compare__note {
-    margin-top: 10px;
-  }
-
   .compression-option {
     min-height: 54px;
     padding-block: 8px;
-  }
-
-  .estimate {
-    margin-block: 14px;
-    padding-top: 12px;
   }
 
   .signature-panel {

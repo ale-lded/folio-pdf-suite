@@ -17,6 +17,7 @@ import { signPdf, type SignPlacement } from './lib/signPdf'
 import { zipPdfs } from './lib/zipPdfs'
 import { protectPdf, type ProtectMode } from './lib/protectPdf'
 import { unlockPdf } from './lib/unlockPdf'
+import { compressPdf, type CompressionLevel } from './lib/compressPdf'
 import { formatFileSize } from './lib/pdfFiles'
 import type { Screen, ToolId } from './types'
 
@@ -28,7 +29,7 @@ export default function App() {
   // Quale strumento ha prodotto il risultato: decide cosa mostrano le schermate
   // condivise "progress" e "result".
   const [lastRun, setLastRun] = useState<
-    'merge' | 'split' | 'reorder' | 'sign' | 'protect'
+    'merge' | 'split' | 'reorder' | 'sign' | 'protect' | 'compress'
   >('merge')
 
   const [files, setFiles] = useState<File[]>([])
@@ -47,6 +48,14 @@ export default function App() {
   const [signFile, setSignFile] = useState<File | null>(null)
   const [signError, setSignError] = useState<string | null>(null)
   const [signedPdf, setSignedPdf] = useState<Blob | null>(null)
+
+  const [compressFile, setCompressFile] = useState<File | null>(null)
+  const [compressLevel, setCompressLevel] =
+    useState<CompressionLevel>('balanced')
+  const [compressError, setCompressError] = useState<string | null>(null)
+  const [compressedPdf, setCompressedPdf] = useState<Blob | null>(null)
+  // Dimensioni prima e dopo, per mostrare il risparmio nel risultato.
+  const [compressSizes, setCompressSizes] = useState({ before: 0, after: 0 })
 
   const [protectFile, setProtectFile] = useState<File | null>(null)
   const [protectMode, setProtectMode] = useState<ProtectMode>('add')
@@ -169,6 +178,35 @@ export default function App() {
     }
   }
 
+  async function startCompress(file: File, level: CompressionLevel) {
+    setLastRun('compress')
+    setCompressError(null)
+    setCompressedPdf(null)
+    setScreen('progress')
+
+    try {
+      const [result] = await Promise.all([
+        compressPdf(file, level),
+        new Promise((resolve) => setTimeout(resolve, 800)),
+      ])
+
+      const blob = new Blob([result.bytes.slice()], { type: 'application/pdf' })
+      setCompressSizes({
+        before: result.originalSize,
+        after: result.compressedSize,
+      })
+      setCompressedPdf(blob)
+      setScreen('result')
+    } catch (error) {
+      setCompressError(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while compressing your PDF.',
+      )
+      setScreen('compress')
+    }
+  }
+
   async function startProtect(
     file: File,
     mode: ProtectMode,
@@ -207,6 +245,13 @@ export default function App() {
     ? reorderFile.name.replace(/\.pdf$/i, '')
     : 'reordered'
   const signStem = signFile ? signFile.name.replace(/\.pdf$/i, '') : 'signed'
+  const compressStem = compressFile
+    ? compressFile.name.replace(/\.pdf$/i, '')
+    : 'compressed'
+  const compressSaving =
+    compressSizes.before > 0
+      ? Math.round((1 - compressSizes.after / compressSizes.before) * 100)
+      : 0
   const protectStem = protectFile
     ? protectFile.name.replace(/\.pdf$/i, '')
     : 'protected'
@@ -272,7 +317,24 @@ export default function App() {
             reorderError={reorderError}
           />
         ) : screen === 'compress' ? (
-          <CompressPage onBack={() => setScreen('home')} />
+          <CompressPage
+            compressError={compressError}
+            file={compressFile}
+            level={compressLevel}
+            onBack={() => {
+              setScreen('home')
+              setCompressError(null)
+            }}
+            onFileChange={(file) => {
+              setCompressFile(file)
+              setCompressError(null)
+            }}
+            onLevelChange={(level) => {
+              setCompressLevel(level)
+              setCompressError(null)
+            }}
+            onStart={startCompress}
+          />
         ) : screen === 'sign' ? (
           <SignPage
             file={signFile}
@@ -307,7 +369,13 @@ export default function App() {
             protectError={protectError}
           />
         ) : screen === 'progress' ? (
-          lastRun === 'protect' ? (
+          lastRun === 'compress' ? (
+            <ProgressPage
+              description="Shrinking your PDF on your device. The first time, the compression engine is downloaded once, so it can take a little longer."
+              icon="compress"
+              title="Compressing your PDF"
+            />
+          ) : lastRun === 'protect' ? (
             protectMode === 'add' ? (
               <ProgressPage
                 description="Encrypting your PDF on your device. Your password never leaves it."
@@ -349,7 +417,26 @@ export default function App() {
             />
           )
         ) : screen === 'result' ? (
-          lastRun === 'protect' ? (
+          lastRun === 'compress' ? (
+            <ResultPage
+              description={`${formatFileSize(compressSizes.before)} → ${formatFileSize(
+                compressSizes.after,
+              )} · ${compressSaving}% smaller`}
+              downloadLabel="Download PDF"
+              downloadName={`${compressStem}-compressed.pdf`}
+              onHome={() => {
+                setCompressedPdf(null)
+                setScreen('home')
+              }}
+              onRetry={() => {
+                setCompressedPdf(null)
+                setScreen('compress')
+              }}
+              result={compressedPdf}
+              retryLabel="Back to compress"
+              title="Your PDF is smaller"
+            />
+          ) : lastRun === 'protect' ? (
             <ResultPage
               description={`${
                 protectMode === 'add' ? 'Password-protected' : 'Password removed'

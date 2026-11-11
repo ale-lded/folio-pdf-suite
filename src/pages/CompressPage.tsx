@@ -1,50 +1,87 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { WorkspaceHeading } from '../components/WorkspaceHeading'
+import type { CompressionLevel } from '../lib/compressPdf'
+import { addPdfFiles, formatFileSize } from '../lib/pdfFiles'
 
 type CompressPageProps = {
+  file: File | null
+  onFileChange: (file: File | null) => void
+  // Il livello vive in App: se la compressione fallisce e torniamo qui, resta
+  // quello scelto.
+  level: CompressionLevel
+  onLevelChange: (level: CompressionLevel) => void
+  onStart: (file: File, level: CompressionLevel) => void
   onBack: () => void
+  compressError: string | null
 }
 
-const compressionLevels = [
+const compressionLevels: {
+  id: CompressionLevel
+  title: string
+  description: string
+  detail: string
+}[] = [
   {
     id: 'light',
     title: 'Light',
-    description: 'Best quality',
-    sampleSize: '8.4 MB',
-    sampleSaving: '30%',
+    description: 'Best quality, for printing',
+    detail: '300 dpi',
   },
   {
     id: 'balanced',
     title: 'Balanced',
-    description: 'Recommended',
-    sampleSize: '3.4 MB',
-    sampleSaving: '72%',
+    description: 'Recommended for sharing',
+    detail: '150 dpi',
   },
   {
     id: 'strong',
     title: 'Strong',
-    description: 'Smallest sample size',
-    sampleSize: '1.8 MB',
-    sampleSaving: '85%',
+    description: 'Smallest file, for screens',
+    detail: '72 dpi',
   },
-] as const
+]
 
-type CompressionLevel = (typeof compressionLevels)[number]['id']
+export function CompressPage({
+  file,
+  onFileChange,
+  level,
+  onLevelChange,
+  onStart,
+  onBack,
+  compressError,
+}: CompressPageProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
 
-export function CompressPage({ onBack }: CompressPageProps) {
-  const [level, setLevel] = useState<CompressionLevel>('balanced')
-  const [demoMessage, setDemoMessage] = useState<string | null>(null)
-  const selectedLevel = compressionLevels.find((item) => item.id === level)
+  function chooseFile(fileList: FileList) {
+    const result = addPdfFiles([], fileList)
+    const [chosenFile] = result.added
 
-  if (!selectedLevel) {
-    throw new Error(`Unknown compression level: ${level}`)
+    if (!chosenFile) {
+      setError('Choose a PDF file that is no larger than 100 MB.')
+      return
+    }
+
+    setError(
+      fileList.length > 1
+        ? `Compress works on one file at a time, so only "${chosenFile.name}" was added.`
+        : null,
+    )
+    onFileChange(chosenFile)
+  }
+
+  function handleDrop(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault()
+    setIsDragging(false)
+    chooseFile(event.dataTransfer.files)
   }
 
   return (
     <section aria-labelledby="compress-title" className="workspace">
       <WorkspaceHeading
-        description="Choose a compression preset for this sample preview."
+        description="Choose a PDF, then pick how much to shrink it."
         eyebrow="Smaller files, your choice of quality"
         icon="compress"
         onBack={onBack}
@@ -52,29 +89,92 @@ export function CompressPage({ onBack }: CompressPageProps) {
         titleId="compress-title"
       />
 
-      <div className="compress-layout">
-        <section aria-label="Sample compression comparison" className="compare">
-          <div className="compare__heading">
-            <strong>Sample document</strong>
-            <span>Example only</span>
+      <div className="merge-layout">
+        <div className="merge-files">
+          <div
+            className={`upload-box${isDragging ? ' upload-box--active' : ''}`}
+            onDragEnter={(event) => {
+              event.preventDefault()
+              setIsDragging(true)
+            }}
+            onDragLeave={(event) => {
+              const nextTarget = event.relatedTarget
+
+              if (
+                !(nextTarget instanceof Node) ||
+                !event.currentTarget.contains(nextTarget)
+              ) {
+                setIsDragging(false)
+              }
+            }}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={handleDrop}
+          >
+            <span className="upload-box__icon">
+              <Icon name="upload" size={26} />
+            </span>
+            <div className="upload-box__text">
+              <strong>Drop a PDF here</strong>
+              <p>or select one from your device</p>
+            </div>
+            <button
+              className="button button--secondary"
+              onClick={() => inputRef.current?.click()}
+              type="button"
+            >
+              Browse files
+            </button>
+            <input
+              accept="application/pdf,.pdf"
+              aria-label="Choose a PDF file"
+              className="visually-hidden"
+              onChange={(event) => {
+                if (event.currentTarget.files) {
+                  chooseFile(event.currentTarget.files)
+                  event.currentTarget.value = ''
+                }
+              }}
+              ref={inputRef}
+              type="file"
+            />
           </div>
-          <div className="compare-label">
-            <span>Original · 12 MB</span>
-            <span>Sample · {selectedLevel.sampleSize}</span>
-          </div>
-          <div className="document-preview">
-            <span className="document-preview__eyebrow">Folio documents</span>
-            <strong>ANNUAL<br />REPORT</strong>
-            <span className="document-preview__line" />
-            <span className="document-preview__line document-preview__line--short" />
-            <span className="document-preview__line" />
-            <span className="document-preview__line document-preview__line--medium" />
-            <span aria-hidden="true" className="document-preview__divider">↔</span>
-          </div>
-          <p className="compare__note">
-            Sample sizes are illustrative and are not calculated from a PDF.
-          </p>
-        </section>
+
+          {file && (
+            <div className="file-row file-row--standalone">
+              <span aria-hidden="true" className="file-row__icon">
+                <Icon name="file" size={18} />
+              </span>
+              <span className="file-row__details">
+                <strong>{file.name}</strong>
+                <small>{formatFileSize(file.size)} · PDF</small>
+              </span>
+              <div className="file-row__actions">
+                <button
+                  aria-label={`Remove ${file.name}`}
+                  className="icon-button icon-button--remove"
+                  onClick={() => {
+                    onFileChange(null)
+                    setError(null)
+                  }}
+                  type="button"
+                >
+                  <Icon name="close" size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <p className="form-message form-message--error" role="alert">
+              {error}
+            </p>
+          )}
+          {compressError && (
+            <p className="form-message form-message--error" role="alert">
+              {compressError}
+            </p>
+          )}
+        </div>
 
         <aside aria-labelledby="compression-level-title" className="options compression">
           <h2 id="compression-level-title">Compression level</h2>
@@ -88,10 +188,7 @@ export function CompressPage({ onBack }: CompressPageProps) {
                 <input
                   checked={level === option.id}
                   name="compression-level"
-                  onChange={() => {
-                    setLevel(option.id)
-                    setDemoMessage(null)
-                  }}
+                  onChange={() => onLevelChange(option.id)}
                   type="radio"
                   value={option.id}
                 />
@@ -100,35 +197,44 @@ export function CompressPage({ onBack }: CompressPageProps) {
                   <strong>{option.title}</strong>
                   <small>{option.description}</small>
                 </span>
-                <span className="compression-option__size">{option.sampleSize}</span>
+                <span className="compression-option__size">{option.detail}</span>
               </label>
             ))}
           </fieldset>
-          <div className="estimate">
-            <span>Sample estimated saving</span>
-            <strong>−{selectedLevel.sampleSaving}</strong>
-          </div>
+
+          <p className="field__hint">
+            Compression runs on your device with a dedicated engine, so it's fast
+            and your file stays private. The first time, your browser downloads
+            the engine (about 11 MB); after that it keeps it in its cache and
+            compression starts right away.
+          </p>
+
           <p className="privacy-note">
             <Icon name="lock" size={14} />
-            Prototype only — no file is selected or modified.
+            Your file stays on your device. Nothing is uploaded.
           </p>
           <button
             className="button button--primary merge-button"
-            onClick={() =>
-              setDemoMessage(
-                `${selectedLevel.title} preset selected. No PDF was compressed or generated.`,
-              )
-            }
+            disabled={!file}
+            onClick={() => {
+              if (file) onStart(file, level)
+            }}
             type="button"
           >
-            Preview this preset
+            Compress PDF
             <Icon name="arrow" size={17} />
           </button>
-          {demoMessage && (
-            <p className="form-message form-message--info" role="status">
-              {demoMessage}
-            </p>
-          )}
+          <button
+            className="button button--ghost clear-button"
+            disabled={!file}
+            onClick={() => {
+              onFileChange(null)
+              setError(null)
+            }}
+            type="button"
+          >
+            Clear
+          </button>
         </aside>
       </div>
     </section>
