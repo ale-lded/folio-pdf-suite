@@ -14,11 +14,8 @@ export const author = {
   url: 'https://alessiomura.fr',
 }
 
-/**
- * Email pubblicata nelle mentions légales come contatto diretto.
- * DA COMPILARE con l'indirizzo dedicato scelto dall'autore.
- */
-export const contactEmail: string | null = null
+/** Email pubblicata nelle mentions légales come contatto diretto. */
+export const contactEmail: string | null = 'contact@alessiomura.fr'
 
 /** Anno di inizio del copyright, per gli avvisi richiesti dall'AGPL. */
 export const copyrightYear = 2026
