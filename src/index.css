@@ -1280,6 +1280,108 @@
     background: color-mix(in srgb, var(--accent) 8%, var(--surface));
   }
 
+  /* Reorder: una griglia di tessere-pagina trascinabili. */
+  .page-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .page-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 18px 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface-raised);
+    cursor: grab;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease,
+      opacity 150ms ease;
+  }
+
+  .page-tile:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  }
+
+  .page-tile:active {
+    cursor: grabbing;
+  }
+
+  .page-tile--dragging {
+    opacity: 0.4;
+  }
+
+  .page-tile--drop-target {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+
+  .page-tile__thumb {
+    display: grid;
+    width: 56px;
+    height: 72px;
+    place-items: center;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+  }
+
+  .page-tile__label {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .page-tile__remove {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--muted);
+    opacity: 0;
+    transition:
+      opacity 150ms ease,
+      color 150ms ease,
+      border-color 150ms ease;
+  }
+
+  .page-tile:hover .page-tile__remove,
+  .page-tile__remove:focus-visible {
+    opacity: 1;
+  }
+
+  .page-tile__remove:hover {
+    border-color: #ff8e78;
+    color: #ff8e78;
+  }
+
+  .reorder-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .reorder-actions .button {
+    width: 100%;
+    justify-content: center;
+  }
+
   .options {
     position: sticky;
     top: 84px;

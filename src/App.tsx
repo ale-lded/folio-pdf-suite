@@ -7,9 +7,11 @@ import { ProgressPage } from './pages/ProgressPage'
 import { ResultPage } from './pages/ResultPage'
 import { SignPage } from './pages/SignPage'
 import { SplitPage } from './pages/SplitPage'
+import { ReorderPage } from './pages/ReorderPage'
 import { ToolPlaceholder } from './pages/ToolPlaceholder'
 import { mergePdfs } from './lib/mergePdfs'
 import { splitPdf, type PageRange } from './lib/splitPdf'
+import { reorderPdf } from './lib/reorderPdf'
 import { zipPdfs } from './lib/zipPdfs'
 import { formatFileSize } from './lib/pdfFiles'
 import type { Screen, ToolId } from './types'
@@ -21,7 +23,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
   // Quale strumento ha prodotto il risultato: decide cosa mostrano le schermate
   // condivise "progress" e "result".
-  const [lastRun, setLastRun] = useState<'merge' | 'split'>('merge')
+  const [lastRun, setLastRun] = useState<'merge' | 'split' | 'reorder'>('merge')
 
   const [files, setFiles] = useState<File[]>([])
   const [mergeError, setMergeError] = useState<string | null>(null)
@@ -31,6 +33,10 @@ export default function App() {
   const [splitError, setSplitError] = useState<string | null>(null)
   const [splitZip, setSplitZip] = useState<Blob | null>(null)
   const [splitPartCount, setSplitPartCount] = useState(0)
+
+  const [reorderFile, setReorderFile] = useState<File | null>(null)
+  const [reorderError, setReorderError] = useState<string | null>(null)
+  const [reorderedPdf, setReorderedPdf] = useState<Blob | null>(null)
 
   // Screens share one scroll position, so a new one would open scrolled down.
   useEffect(() => {
@@ -92,7 +98,37 @@ export default function App() {
     }
   }
 
+  async function startReorder(file: File, order: number[]) {
+    setLastRun('reorder')
+    setReorderError(null)
+    setReorderedPdf(null)
+    setScreen('progress')
+
+    try {
+      const [reorderedBytes] = await Promise.all([
+        reorderPdf(file, order),
+        new Promise((resolve) => setTimeout(resolve, 800)),
+      ])
+
+      const blob = new Blob([reorderedBytes.slice()], {
+        type: 'application/pdf',
+      })
+      setReorderedPdf(blob)
+      setScreen('result')
+    } catch (error) {
+      setReorderError(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while reordering your PDF.',
+      )
+      setScreen('reorder')
+    }
+  }
+
   const splitStem = splitFile ? splitFile.name.replace(/\.pdf$/i, '') : 'split'
+  const reorderStem = reorderFile
+    ? reorderFile.name.replace(/\.pdf$/i, '')
+    : 'reordered'
 
   return (
     <div className="app" data-theme={theme}>
@@ -140,6 +176,20 @@ export default function App() {
             onStart={startSplit}
             splitError={splitError}
           />
+        ) : screen === 'reorder' ? (
+          <ReorderPage
+            file={reorderFile}
+            onFileChange={(file) => {
+              setReorderFile(file)
+              setReorderError(null)
+            }}
+            onBack={() => {
+              setScreen('home')
+              setReorderError(null)
+            }}
+            onStart={startReorder}
+            reorderError={reorderError}
+          />
         ) : screen === 'compress' ? (
           <CompressPage onBack={() => setScreen('home')} />
         ) : screen === 'sign' ? (
@@ -150,6 +200,12 @@ export default function App() {
               description="Dividing the pages on your device. Large files can take a while."
               icon="split"
               title="Splitting your PDF"
+            />
+          ) : lastRun === 'reorder' ? (
+            <ProgressPage
+              description="Rebuilding the PDF in its new order on your device."
+              icon="reorder"
+              title="Reordering your PDF"
             />
           ) : (
             <ProgressPage
@@ -179,6 +235,25 @@ export default function App() {
               result={splitZip}
               retryLabel="Back to split"
               title="Your files are ready"
+            />
+          ) : lastRun === 'reorder' ? (
+            <ResultPage
+              description={`Reordered${
+                reorderedPdf ? ` · ${formatFileSize(reorderedPdf.size)}` : ''
+              }`}
+              downloadLabel="Download PDF"
+              downloadName={`${reorderStem}-reordered.pdf`}
+              onHome={() => {
+                setReorderedPdf(null)
+                setScreen('home')
+              }}
+              onRetry={() => {
+                setReorderedPdf(null)
+                setScreen('reorder')
+              }}
+              result={reorderedPdf}
+              retryLabel="Back to reorder"
+              title="Your PDF is ready"
             />
           ) : (
             <ResultPage
