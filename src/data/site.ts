@@ -1,6 +1,6 @@
 /** Informazioni sul sito usate da footer, Licenses e Legal notice. */
 
-export const repositoryUrl = 'https://github.com/ale-lded/animationPdfTools'
+export const repositoryUrl = 'https://github.com/ale-lded/folio-pdf-suite'
 
 /** Il codice esatto di questa versione del sito (vedi __APP_COMMIT__ in vite.config.ts). */
 export const sourceUrl = `${repositoryUrl}/tree/${__APP_COMMIT__}`

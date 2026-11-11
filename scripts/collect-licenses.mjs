@@ -81,7 +81,7 @@ const sections = [
   '',
   'Folio PDF is free software under the GNU AGPL v3. Its source code, including',
   'the scripts that build the WebAssembly engines, is at',
-  'https://github.com/ale-lded/animationPdfTools',
+  'https://github.com/ale-lded/folio-pdf-suite',
   '',
   'This file lists the third-party software that the site sends to your browser,',
   'with its license. It is generated automatically at build time.',

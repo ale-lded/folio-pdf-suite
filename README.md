@@ -1,6 +1,13 @@
 # Folio PDF Suite
 
-A private PDF toolkit that runs entirely in the browser. No backend, no accounts, no file storage: documents are meant to stay on the user's device from start to finish.
+A private PDF toolkit that runs entirely in the browser. No backend, no accounts, no file storage: documents stay on the user's device from start to finish.
+
+**Live at [folio.alessiomura.fr](https://folio.alessiomura.fr)**
+
+- **Nothing is uploaded.** Every tool runs in the browser tab, so files and passwords never reach a server.
+- **Real engines, compiled to WebAssembly.** Compression uses Ghostscript, built from source by this repository; password protection uses qpdf with AES-256.
+- **Works on phones.** Touch-friendly controls, including drag to reorder with a long press.
+- **Free software.** AGPL-3.0, with every third-party license listed on the site.
 
 > **Status: working.** Merge, Split, Compress, Reorder, Protect and Sign all work. The tools in the "More tools" section are still placeholders.
 
