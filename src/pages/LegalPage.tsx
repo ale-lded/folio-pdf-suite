@@ -1,4 +1,12 @@
-import { author, contactEmail, hosting, licenseUrl, sourceUrl } from '../data/site'
+import {
+  author,
+  authorLegalNoticeUrl,
+  contactEmail,
+  hosting,
+  licenseUrl,
+  siret,
+  sourceUrl,
+} from '../data/site'
 
 type LegalPageProps = {
   onBack: () => void
@@ -8,11 +16,10 @@ type LegalPageProps = {
 /**
  * Mentions légales (LCEN) e informativa privacy.
  *
- * Il sito è pubblicato da un privato, a titolo non professionale: la LCEN
- * permette di non pubblicare indirizzo e telefono personali, purché siano
- * stati comunicati all'hébergeur (account Cloudflare con nome e cognome veri).
- * Se Folio diventa parte di un'attività professionale (micro-entreprise),
- * questa pagina va aggiornata con i dati professionali: indirizzo, SIRET.
+ * Il sito è pubblicato dalla micro-entreprise di Alessio Mura (EI). Indirizzo
+ * e telefono, obbligatori per un editore professionale, non sono ripetuti qui:
+ * la pagina rimanda alle mentions légales di alessiomura.fr, che devono
+ * contenerli. Se quella pagina cambia URL, aggiornare authorLegalNoticeUrl.
  *
  * Il testo sulla privacy descrive il comportamento reale dell'app: se un giorno
  * aggiungiamo analytics, cookie o un salvataggio nel browser, va aggiornato.
@@ -31,9 +38,10 @@ export function LegalPage({ onBack, onLicenses }: LegalPageProps) {
 
         <h2>Publisher</h2>
         <p>
-          Publisher and director of publication: {author.name}, a private
-          individual publishing this free, non-commercial website in a personal
-          capacity.
+          Publisher and director of publication: {author.name}, EI
+          (entrepreneur individuel)
+          <br />
+          SIRET: {siret}
           {contactEmail && (
             <>
               <br />
@@ -42,9 +50,12 @@ export function LegalPage({ onBack, onLicenses }: LegalPageProps) {
           )}
         </p>
         <p>
-          As permitted by French law (LCEN) for non-professional publishers, the
-          publisher's personal address and phone number are not published; they
-          have been provided to the hosting provider.
+          The publisher's full professional details, including the postal
+          address and phone number, are given in the legal notice of{' '}
+          <a href={authorLegalNoticeUrl} rel="noreferrer" target="_blank">
+            {new URL(authorLegalNoticeUrl).hostname}
+          </a>
+          , linked at the bottom of every page.
         </p>
 
         {hosting && (

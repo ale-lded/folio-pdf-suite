@@ -14,6 +14,16 @@ export const author = {
   url: 'https://alessiomura.fr',
 }
 
+/** Micro-entreprise dell'editore (entrepreneur individuel). */
+export const siret = '133 049 163 00016'
+
+/**
+ * Le mentions légales complete dell'attività (indirizzo, telefono): Folio ci
+ * rimanda invece di ripeterle. Quando la pagina su alessiomura.fr avrà un URL
+ * preciso, va messo qui.
+ */
+export const authorLegalNoticeUrl = author.url
+
 /** Email pubblicata nelle mentions légales come contatto diretto. */
 export const contactEmail: string | null = 'contact@alessiomura.fr'
 
