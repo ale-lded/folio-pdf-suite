@@ -2632,8 +2632,17 @@
  * is what stops the box, and the list scrolls from there.
  */
 @media (min-width: 1100px) {
+  .page-container:has(> .home-page) {
+    padding-block: 28px 32px;
+  }
+
+  /*
+   * Fills the screen without scrolling: 184px is the header (64), the footer
+   * (60) and the container padding (28 + 32).
+   */
   .hero {
-    height: max(560px, min(690px, calc(100vh - 140px)));
+    height: max(540px, min(690px, calc(100vh - 184px)));
+    padding-top: 20px;
     grid-template-rows: minmax(0, 1fr);
   }
 
